@@ -20,7 +20,7 @@ void selection() {
     datatree->SetBranchAddress("phiph", phiph);
 
     std::vector<int> candidates;
-    TH1D* hist_inv_mass = new TH1D("hist_inv_mass","inv mass, GeV", 50, 0, 1);
+    TH1D* hist_inv_mass = new TH1D("hist_inv_mass","inv mass, GeV", 50, 0.09, 0.21);
     TH1D* hist_angle = new TH1D("hist_angle", "angle", 50, 0, TMath::Pi());
 
     for (int i=0; i<datatree->GetEntries(); i++) {
@@ -28,19 +28,24 @@ void selection() {
         int candidate_num = 0;
         std::vector<double> inv_mass_vec;
         for (int j = 0; j < nph - 1; j++) {
-            for (int k = j + 1; k < nph; k++) {
-                TVector3 vec1(sin(thetaph[j])*cos(phiph[j]), sin(thetaph[j])*sin(phiph[j]), cos(phiph[j]));
-                TVector3 vec2(sin(thetaph[k])*cos(phiph[k]), sin(thetaph[k])*sin(phiph[k]), cos(phiph[k]));
-                double ang = vec1.Angle(vec2);
+            for (int k = j+1; k < nph; k++) {
+                TVector3 v1(sin(thetaph[j])*cos(phiph[j]), sin(thetaph[j])*sin(phiph[j]), cos(thetaph[j]));
+                TVector3 v2(sin(thetaph[k])*cos(phiph[k]), sin(thetaph[k])*sin(phiph[k]), cos(thetaph[k]));
+                auto ang = v1.Angle(v2);
+                double m_inv = sqrt(2. * eph[j] * eph[k] * (1. - cos(ang)));
                 hist_angle->Fill(ang);
-                double m_inv = sqrt(2*eph[j]*eph[k] * (1 - cos(ang)));
-                inv_mass_vec.push_back(m_inv);
-                if (0.1 <= m_inv && m_inv < 0.2) candidates.push_back(candidate_num);//candidate_num++;
+                if (0.1 <= m_inv && m_inv <= 0.2){
+                    candidate_num++;
+                    inv_mass_vec.push_back(m_inv);
+                }
             }
         }
-        //candidates.push_back(candidate_num);
-        //if (candidate_num == 2) 
-        for (double val : inv_mass_vec) hist_inv_mass->Fill(val);
+        candidates.push_back(candidate_num);
+        if (candidate_num == 2){
+            for (double val : inv_mass_vec){
+                hist_inv_mass->Fill(val);
+            }
+        }
     }
     
     TCanvas *canvas = new TCanvas("canvas", "title.png", 1200, 900);
